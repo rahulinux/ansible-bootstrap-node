@@ -1,0 +1,13 @@
+---
+
+- setup: filter=ansible_env
+
+- set_fact:
+     kube_ssl_path: /etc/kubernetes/ssl
+     url: git+https://github.com/echupriyanov/openshift-restclient-python.git
+     kube_user: "{{ ansible_env['SUDO_USER'] | default(ansible_env['USER']) }}"
+     user_home: "{{ ansible_env['HOME'] }}"
+
+     #- include_tasks: install_packages.yaml
+     #- include_tasks: install_roles.yaml
+- include_tasks: setup_kubeconf.yaml

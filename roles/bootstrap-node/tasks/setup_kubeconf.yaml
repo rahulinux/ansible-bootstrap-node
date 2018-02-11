@@ -1,0 +1,41 @@
+---
+
+- name: Check kube dir
+  file: path={{ user_home }}/.kube state=directory
+
+- name: Check kubectl configured or not 
+  stat: path={{  user_home }}/.kube/config
+  register: fs_status
+
+- name: Check content of kubecfg
+  slurp:
+    src: "{{ user_home }}/.kube/config"
+  register: kubecfg_content  
+  when: fs_status.stat.exists
+
+- name: reading certs and keys from kube-master 
+  block:
+  - setup: filter=ansible_nodename 
+
+  - name: read ca.pem
+    shell: cat {{kube_ssl_path}}/ca.pem
+    when: not kubecfg_content['content'] | b64decode | search(ansible_nodename) 
+    register: ca_pem
+
+  - name: read user cert
+    shell: cat {{kube_ssl_path}}/admin-{{ ansible_nodename }}.pem
+    when: not kubecfg_content['content'] | b64decode | search(ansible_nodename) 
+    register: user_pem
+ 
+  - name: read user key
+    shell: cat {{kube_ssl_path}}/admin-{{ ansible_nodename }}-key.pem
+    when: not kubecfg_content['content'] | b64decode | search(ansible_nodename) 
+    register: user_key
+
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  delegate_facts: True
+  become: yes
+
+- name: Generating kubeconfig 
+  template: src=kubeconfig.j2 dest={{ user_home }}/.kube/config owner={{ kube_user }} backup=yes
+  when: not kubecfg_content['content'] | b64decode | search(ansible_nodename) 

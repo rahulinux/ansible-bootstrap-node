@@ -1,0 +1,6 @@
+---
+- name: Installing ansible roles
+  command: ansible-galaxy install {{ item }}
+  with_items:
+  - "{{ ansible_roles_list }}"
+  environment: "{{ proxy_env | default('no_proxy=') }}"

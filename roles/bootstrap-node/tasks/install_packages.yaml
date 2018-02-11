@@ -1,0 +1,19 @@
+---
+- name: Installing require packages
+  pip:
+    name: "{{ item }}"
+    extra_args: --upgrade --user
+  with_items:
+     - setuptools
+     - pip
+     - pykafka
+     - ansible-modules-hashivault==3.5.1
+  environment: "{{ proxy_env | default('no_proxy=') }}"
+
+- lineinfile: path=/tmp/requirements.txt line={{ url }} create=yes
+
+- name: Install latest openshift client
+  pip:
+    requirements: /tmp/requirements.txt
+    extra_args: --user --trusted-host github.com
+  environment: "{{ proxy_env | default('no_proxy=') }}"
